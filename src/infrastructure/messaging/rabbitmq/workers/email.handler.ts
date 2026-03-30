@@ -42,13 +42,18 @@ export class EmailHandler {
             await this.recipientRepository.incrementAttempt(content.recipientId);
 
             if (attempt < 3) {
-                log.warn({ nextAttempt: attempt + 1 }, "Retrying message");
+                const backoffDelay = Math.pow(2, attempt) * 1000;
+                log.warn({ nextAttempt: attempt + 1, delayMs: backoffDelay }, "Retrying message");
 
-                await this.publisher.publish(EmailQueue.routingKey, {
-                    ...content,
-                    attempt: attempt + 1,
-                    correlationId,
-                });
+                await this.publisher.publish(
+                    EmailQueue.delayRoutingKey, 
+                    {
+                        ...content,
+                        attempt: attempt + 1,
+                        correlationId,
+                    },
+                    { expiration: backoffDelay.toString() }
+                );
 
                 return { success: false, retry: true };
             }

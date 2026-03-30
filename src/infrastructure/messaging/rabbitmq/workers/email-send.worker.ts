@@ -50,6 +50,22 @@ async function startWorker() {
         EmailQueue.routingKey
     );
 
+    // Fila de Delay (Sem consumidores, encaminha de volta para a exchange via TTL expiration)
+    await channel.assertQueue(EmailQueue.delayQueue, {
+        durable: true,
+        arguments: {
+            "x-dead-letter-exchange": EmailQueue.exchange,
+            "x-dead-letter-routing-key": EmailQueue.routingKey,
+        },
+    });
+
+    // Binding da fila de Delay
+    await channel.bindQueue(
+        EmailQueue.delayQueue,
+        EmailQueue.exchange,
+        EmailQueue.delayRoutingKey
+    );
+
     // Fila de mensagens mortas
     await channel.assertQueue(EmailQueue.dlqQueue, {
         durable: true,

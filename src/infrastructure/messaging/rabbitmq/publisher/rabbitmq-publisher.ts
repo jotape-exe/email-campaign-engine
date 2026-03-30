@@ -3,7 +3,7 @@ import { RabbitMQConnection } from "../connection/rabbitmq-connection";
 import { EmailQueue } from "../queues/email.queue";
 
 export class RabbitMQPublisher implements MessagePublisher {
-    async publish(queue: string, message: any) {
+    async publish(queue: string, message: any, options?: any) {
         const conn = await RabbitMQConnection.getInstance();
         const channel = conn.getChannel();
 
@@ -15,7 +15,7 @@ export class RabbitMQPublisher implements MessagePublisher {
             EmailQueue.exchange,
             queue,
             Buffer.from(JSON.stringify(message)),
-            { persistent: true }
+            { persistent: true, ...options }
         );
     }
 }
